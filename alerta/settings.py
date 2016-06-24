@@ -71,7 +71,7 @@ SMTP_PASSWORD = ''  # password for MAIL_FROM account, Gmail uses application-spe
 
 # Plug-ins
 PLUGINS = ['reject']
-# PLUGINS = ['amqp', 'enhance', 'logstash', 'normalise', 'reject', 'sns']
+# PLUGINS = ['amqp', 'logstash', 'normalise', 'reject', 'sns']
 
 ORIGIN_BLACKLIST = ['foo/bar$', '.*/qux']  # reject all foo alerts from bar, and everything from qux
 ALLOWED_ENVIRONMENTS = ['Production', 'Development']  # reject alerts without allowed environments
