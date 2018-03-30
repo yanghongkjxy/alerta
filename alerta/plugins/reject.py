@@ -1,25 +1,31 @@
 import re
 import logging
 
-from alerta.app import app
-from alerta.app.exceptions import RejectException
+try:
+    from alerta.plugins import app  # alerta >= 5.0
+except ImportError:
+    from alerta.app import app  # alerta < 5.0
+
+from alerta.exceptions import RejectException
 from alerta.plugins import PluginBase
 
 LOG = logging.getLogger('alerta.plugins.reject')
 
 ORIGIN_BLACKLIST_REGEX = [re.compile(x) for x in app.config['ORIGIN_BLACKLIST']]
+ALLOWED_ENVIRONMENT_REGEX = [re.compile(x) for x in app.config['ALLOWED_ENVIRONMENTS']]
 ALLOWED_ENVIRONMENTS = app.config.get('ALLOWED_ENVIRONMENTS', [])
+
 
 class RejectPolicy(PluginBase):
 
     def pre_receive(self, alert):
         if any(regex.match(alert.origin) for regex in ORIGIN_BLACKLIST_REGEX):
-            LOG.warning("[POLICY] Alert origin '%s' has been blacklisted" % alert.origin)
+            LOG.warning("[POLICY] Alert origin '%s' has been blacklisted", alert.origin)
             raise RejectException("[POLICY] Alert origin '%s' has been blacklisted" % alert.origin)
 
-        if alert.environment not in ALLOWED_ENVIRONMENTS:
-            LOG.warning("[POLICY] Alert environment must be one of %s" % ', '.join(ALLOWED_ENVIRONMENTS))
-            raise RejectException("[POLICY] Alert environment must be one of %s" % ', '.join(ALLOWED_ENVIRONMENTS))
+        if not any(regex.match(alert.environment) for regex in ALLOWED_ENVIRONMENT_REGEX):
+            LOG.warning("[POLICY] Alert environment does not match one of %s", ', '.join(ALLOWED_ENVIRONMENTS))
+            raise RejectException("[POLICY] Alert environment does not match one of %s" % ', '.join(ALLOWED_ENVIRONMENTS))
 
         if not alert.service:
             LOG.warning("[POLICY] Alert must define a service")

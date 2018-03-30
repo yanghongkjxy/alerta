@@ -1,7 +1,7 @@
-Alerta Release 4.9
+Alerta Release 5.0
 ==================
 
-[![Build Status](https://travis-ci.org/guardian/alerta.png)](https://travis-ci.org/guardian/alerta) [![Gitter chat](https://badges.gitter.im/alerta/chat.png)](https://gitter.im/alerta/chat)
+[![Build Status](https://travis-ci.org/alerta/alerta.png)](https://travis-ci.org/alerta/alerta) [![Gitter chat](https://badges.gitter.im/alerta/chat.png)](https://gitter.im/alerta/chat)
 
 The Alerta monitoring tool was developed with the following aims in mind:
 
@@ -18,22 +18,10 @@ Related projects can be found on the Alerta Org Repo at <https://github.com/aler
 Requirements
 ------------
 
-The only mandatory dependency is MongoDB. Everything else is optional.
+The only mandatory dependency is MongoDB or PostgreSQL. Everything else is optional.
 
 - MongoDB version 3.x
-
-Optional
---------
-
-A messaging transport that supports AMQP is required *if* it is wanted to send notifications
-to alert subscribers. It is recommended to use RabbitMQ, but Redis and even MongoDB have been
-tested and shown to work.
-
-- RabbitMQ
-- Redis
-- MongoDB
-
-Note: The default settings use MongoDB so that no additional configuration is required.
+- Postgres version 9.5 or better
 
 Installation
 ------------
@@ -46,7 +34,7 @@ To install MongoDB on Debian/Ubuntu run::
 To install the Alerta server and client run::
 
     $ pip install alerta-server alerta
-    $ alertad
+    $ alertad run
 
 To install the web console run::
 
@@ -69,27 +57,66 @@ or using ``ALERTA_SVR_CONF_FILE`` environment variable::
 Documentation
 -------------
 
-More information on configuration and other aspects of alerta can be found at <http://docs.alerta.io>
+More information on configuration and other aspects of alerta can be found
+at <http://docs.alerta.io>
+
+Development
+-----------
+
+To run in development mode, listening on port 5000::
+
+    $ export FLASK_APP=alerta
+    $ pip install -e .
+    $ flask run
+
+To run in development mode, listening on port 8080, using Postgres and
+reporting errors to [Sentry](https://sentry.io)::
+
+    $ export FLASK_APP=alerta
+    $ export DATABASE_URL=postgres://localhost:5432/alerta5
+    $ export SENTRY_DSN=https://8b56098250544fb78b9578d8af2a7e13:fa9d628da9c4459c922293db72a3203f@sentry.io/153768
+    $ pip install -e .
+    $ flask run --debugger --port 8080 --with-threads --reload
+
+Troubleshooting
+---------------
+
+Problems following a direct upgrade from versions 4.x to 5.x could be
+related to the flattening of the directory structure for the app. An
+example `app.wsgi` file which works for both release 4 and 5 is as
+follows:
+
+```
+#!/usr/bin/env python
+
+try:
+    from alerta import app  # alerta >= 5.0
+except Exception:
+    from alerta.app import app  # alerta < 5.0
+```
 
 Tests
 -----
 
-To run the tests use::
+To run the tests using a local Postgres database run::
 
-    $ ALERTA_SVR_CONF_FILE= nosetests
+    $ pip install -r requirements.txt
+    $ pip install -e .
+    $ createdb test5
+    $ ALERTA_SVR_CONF_FILE= DATABASE_URL=postgres:///test5 nosetests
 
 Cloud Deployment
 ----------------
 
 Alerta can be deployed to the cloud easily using Heroku <https://github.com/alerta/heroku-api-alerta>,
-AWS EC2 <https://github.com/alerta/alerta-cloudformation>, or RedHat OpenShift
-<https://github.com/alerta/openshift-api-alerta>
+AWS EC2 <https://github.com/alerta/alerta-cloudformation>, or Google Cloud Platform
+<https://github.com/alerta/gcloud-api-alerta>
 
 License
 -------
 
     Alerta monitoring system and console
-    Copyright 2012-2016 Guardian News & Media
+    Copyright 2012-2018 Nick Satterly
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
